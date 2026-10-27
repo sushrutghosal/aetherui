@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>FabTrack 98 - Enterprise Wafer Telemetry & ERP Portal</title>
+  <style>
+    body { font-family: Tahoma, sans-serif; background: #c0c0c0; padding: 20px; color: #111; }
+    .window { background: #e0e0e0; border: 3px outset #fff; padding: 15px; max-width: 900px; margin-bottom: 20px; }
+    .title-bar { background: #000080; color: white; padding: 6px 10px; font-weight: bold; margin-bottom: 15px; display: flex; justify-content: space-between; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .panel { border: 2px groove #fff; padding: 12px; background: #dcdcdc; }
+    .panel h3 { margin: 0 0 10px 0; font-size: 13px; color: #000080; text-transform: uppercase; }
+    .row { margin-bottom: 8px; }
+    label { display: inline-block; width: 145px; font-weight: bold; font-size: 12px; }
+    input, select { border: 2px inset #fff; padding: 4px; width: 190px; font-size: 12px; }
+    button { border: 2px outset #fff; background: #d4d0c8; padding: 5px 12px; font-weight: bold; cursor: pointer; font-size: 12px; }
+    table { width: 100%; border-collapse: collapse; background: #fff; font-size: 12px; margin-top: 8px; }
+    th, td { border: 1px solid #888; padding: 5px 8px; text-align: left; }
+    th { background: #000080; color: #fff; }
+    .nav-links { margin-bottom: 12px; font-size: 12px; }
+    .nav-links a { color: #000080; margin-right: 14px; font-weight: bold; }
+    #result-box { margin-top: 12px; background: #fff; border: 2px inset #888; padding: 10px; min-height: 42px; font-family: monospace; font-size: 12px; }
+    #chaos-modal { display: none; position: fixed; top: 130px; left: 220px; background: #ffffcc; border: 3px solid red; padding: 20px; z-index: 9999; box-shadow: 5px 5px 0px #000; }
+  </style>
+</head>
+<body>
+  <div class="window">
+    <div class="title-bar">
+      <span>FabTrack ERP v2.4 (NO PUBLIC REST API)</span>
+      <span>Node: US-FAB-AZ01</span>
+    </div>
+
+    <div class="nav-links">
+      <span>Portal Modules:</span>
+      <a href="/legacy_erp.html">Wafer Lot Control</a>
+    </div>
+
+    <div class="grid">
+      <!-- GET WORKFLOW: Query & Filter Live Wafer Database -->
+      <div class="panel">
+        <h3>1. Query Wafer Lot Telemetry (GET / Read)</h3>
+        <div class="row">
+          <label>Filter by Status:</label>
+          <select id="flt_status" onchange="filterLots()">
+            <option value="ALL">ALL_LOTS</option>
+            <option value="CRITICAL_HOLD">CRITICAL_HOLD</option>
+            <option value="IN_LITHOGRAPHY">IN_LITHOGRAPHY</option>
+            <option value="READY_SHIP">READY_SHIP</option>
+            <option value="EXPEDITE_SHIP">EXPEDITE_SHIP</option>
+            <option value="QUARANTINE_HOLD">QUARANTINE_HOLD</option>
+            <option value="APPROVE_RELEASE">APPROVE_RELEASE</option>
+          </select>
+          <button id="btn_query_lots" onclick="filterLots()">Query DB</button>
+        </div>
+        <table id="lot_table">
+          <thead>
+            <tr><th>Lot_ID</th><th>Node</th><th>Yield</th><th>Status</th><th>Owner</th></tr>
+          </thead>
+          <tbody id="lot_tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- POST WORKFLOW: Mutate / Execute Transaction -->
+      <div class="panel">
+        <h3>2. Execute Wafer Lot Action (POST / Write)</h3>
+        <div class="row">
+          <label>Wafer Lot / Invoice ID:</label>
+          <input id="inp_x91" type="text" placeholder="e.g. LOT-9920-NV" />
+        </div>
+        <div class="row">
+          <label>Action Type:</label>
+          <select id="sel_k02">
+            <option value="EXPEDITE_SHIP">EXPEDITE_SHIP</option>
+            <option value="READY_SHIP">READY_SHIP</option>
+            <option value="APPROVE_RELEASE">APPROVE_RELEASE</option>
+            <option value="QUARANTINE_HOLD">QUARANTINE_HOLD</option>
+            <option value="CRITICAL_HOLD">CRITICAL_HOLD</option>
+            <option value="IN_LITHOGRAPHY">IN_LITHOGRAPHY</option>
+          </select>
+        </div>
+        <div class="row">
+          <label>Authorized Engineer:</label>
+          <input id="inp_eng" type="text" placeholder="Optional on status update" />
+        </div>
+        <div class="row">
+          <label>Simulate UI Chaos:</label>
+          <input id="chk_chaos" class="v2mcp-ignore" type="checkbox" style="width:16px;" />
+          <span style="font-size:11px;">(ERR-902 Modal)</span>
+        </div>
+        <button id="btn_exec_77" onclick="submitAction()">Execute Transaction</button>
+        <div id="result-box">Status: IDLE - Waiting for operator input...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BELOW THE FOLD TELEMETRY (Tests Scroll Discovery) -->
+  <div class="window" style="margin-top: 320px;">
+    <div class="title-bar"><span>Below-the-Fold Cleanroom Sub-Telemetry & Audit Log</span></div>
+    <p style="font-size:12px;">Cleanroom ISO-3 Particle Index: <b>0.04 ppm (NOMINAL)</b> | EUV Scanner Uptime: <b>99.2%</b> | Active Shift Lead: <b>S. Ghosal</b></p>
+  </div>
+
+  <div id="chaos-modal">
+    <p><b>WARNING [ERR-902]:</b> Legacy Compliance Override Required!</p>
+    <button id="btn_override_modal" onclick="confirmOverride()">Click to Acknowledge & Complete</button>
+  </div>
+
+  <script>
+    async function filterLots() {
+      const status = document.getElementById('flt_status').value;
+      const res = await fetch(`/api/internal/wafer_db?status=${encodeURIComponent(status)}`);
+      const data = await res.json();
+      const tbody = document.getElementById('lot_tbody');
+      tbody.innerHTML = data.records.map(r =>
+        `<tr><td>${r.Lot_ID}</td><td>${r.Node}</td><td>${r.Yield}</td><td>${r.Status}</td><td>${r.Owner}</td></tr>`
+      ).join('');
+    }
+    function submitAction() {
+      if (document.getElementById('chk_chaos').checked) {
+        document.getElementById('chaos-modal').style.display = 'block';
+        document.getElementById('result-box').innerText = "BLOCKED: Waiting for modal confirmation...";
+        return;
+      }
+      finalize();
+    }
+    function confirmOverride() {
+      document.getElementById('chaos-modal').style.display = 'none';
+      finalize();
+    }
+    async function finalize() {
+      const lot = document.getElementById('inp_x91').value || 'UNKNOWN';
+      const act = document.getElementById('sel_k02').value;
+      const eng = document.getElementById('inp_eng').value.trim();
+
+      const res = await fetch('/api/internal/wafer_db', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({lot_id: lot, action_type: act, owner: eng})
+      });
+      const dbOut = await res.json();
+      const conf = dbOut.confirmation_code;
+      const finalOwner = dbOut.updated_owner || eng || 'EXISTING_OWNER';
+
+      document.getElementById('result-box').innerText =
+        `SUCCESS | Confirmation_Code: ${conf} | Lot_ID: ${lot} | Status: ${act} | Approved_By: ${finalOwner}`;
+      await filterLots();
+    }
+    filterLots();
+  </script>
+</body>
+</html>

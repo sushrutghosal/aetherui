@@ -1,0 +1,88 @@
+{
+  "target_url": "https://www.youtube.com/",
+  "app_title": "YouTube",
+  "compiler": "Nemotron nvidia/Nemotron-3.5-Super-VL (vision) + live-DOM validation",
+  "compiler_notes": "YouTube homepage for searching and browsing videos",
+  "discovered_links": [
+    {
+      "text": "YouTube Home",
+      "href": "https://www.youtube.com/"
+    },
+    {
+      "text": "Sign in",
+      "href": "https://accounts.google.com/ServiceLogin?service=youtube&uilel=3&passive=true&continue=https%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26app%3Ddesktop%26hl%3Den%26next%3Dhttps%253A%252F%252Fwww.youtube.com%252F&hl=en&ec=65620"
+    },
+    {
+      "text": "Home",
+      "href": "https://www.youtube.com/"
+    },
+    {
+      "text": "Shorts",
+      "href": "https://www.youtube.com/shorts/"
+    },
+    {
+      "text": "Subscriptions",
+      "href": "https://www.youtube.com/feed/subscriptions"
+    },
+    {
+      "text": "You",
+      "href": "https://www.youtube.com/feed/you"
+    }
+  ],
+  "below_fold_summary": "Skip navigation\nSign in\nHome\nShorts\nSubscriptions\nYou\nTry searching to get started\nStart watching videos to help us build a feed of videos you'll love.",
+  "page_context_snapshot": "Skip navigation\nSign in\nHome\nShorts\nSubscriptions\nYou\nTry searching to get started\nStart watching videos to help us build a feed of videos you'll love.",
+  "tools": [
+    {
+      "name": "youtube_search_videos",
+      "method": "GET",
+      "description": "Search YouTube for videos matching the query and returns matching videos with title, channel, duration and views.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "The search query to enter into the YouTube search box"
+          }
+        },
+        "required": [
+          "query"
+        ]
+      },
+      "execution_steps": [
+        {
+          "action": "fill",
+          "mark_id": 3,
+          "css_fallback": "input[name=\"search_query\"]",
+          "target_text": "Search",
+          "value_template": "{{query}}"
+        },
+        {
+          "action": "press_enter",
+          "mark_id": 3,
+          "css_fallback": "input[name=\"search_query\"]",
+          "target_text": "Search",
+          "value_template": null
+        }
+      ],
+      "visual_output_keys": [
+        "search results",
+        "video list"
+      ]
+    },
+    {
+      "name": "youtube_read_page",
+      "method": "GET",
+      "description": "Read the current page and answer a question about it / extract its visible records.",
+      "input_schema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "execution_steps": [],
+      "visual_output_keys": [
+        "answer",
+        "items"
+      ]
+    }
+  ]
+}

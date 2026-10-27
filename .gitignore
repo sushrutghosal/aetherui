@@ -1,0 +1,8 @@
+.env
+.venv/
+runs/
+__pycache__/
+mcp_manifest.json
+debug_compiled_som.png
+.DS_Store
+Judge Requirements.txt

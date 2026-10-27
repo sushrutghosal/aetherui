@@ -1,0 +1,175 @@
+{
+  "target_url": "http://127.0.0.1:8080/legacy_erp.html",
+  "app_title": "FabTrack 98 - Enterprise Wafer Telemetry & ERP Portal",
+  "compiler": "Nemotron nvidia/Nemotron-3.5-Super-VL (vision) + live-DOM validation",
+  "compiler_notes": "The page is a legacy ERP portal for querying wafer lot telemetry and executing wafer lot actions.",
+  "discovered_links": [
+    {
+      "text": "Wafer Lot Control",
+      "href": "http://127.0.0.1:8080/legacy_erp.html"
+    }
+  ],
+  "below_fold_summary": "4041-az\t18A-EUV\t68.2%\tCRITICAL_HOLD\tA. Rivera\nLOT-8812-kr\t3nm-FinFET\t91.5%\tIN_LITHOGRAPHY\tJ. Chen\nLOT-7731-tw\t2nm-GAA\t72.0%\tCRITICAL_HOLD\tS. Ghosal\n2. EXECUTE WAFER LOT ACTION (POST / WRITE)\nWafer Lot / Invoice ID: \nAction Type: \nEXPEDITE_S",
+  "page_context_snapshot": "FabTrack ERP v2.4 (NO PUBLIC REST API)\nNode: US-FAB-AZ01\nPortal Modules: Wafer Lot Control\n1. QUERY WAFER LOT TELEMETRY (GET / READ)\nFilter by Status:\nALL_LOTS\nCRITICAL_HOLD\nIN_LITHOGRAPHY\nREADY_SHIP\nEXPEDITE_SHIP\nQUARANTINE_HOLD\nAPPROVE_RELEASE\nQuery DB\nLot_ID\tNode\tYield\tStatus\tOwner\nLOT-9920-NV\t2nm-GAA\t94.8%\tREADY_SHIP\tS. Ghosal\nLOT-4041-az\t18A-EUV\t68.2%\tCRITICAL_HOLD\tA. Rivera\nLOT-8812-kr\t3nm-FinFET\t91.5%\tIN_LITHOGRAPHY\tJ. Chen\nLOT-7731-tw\t2nm-GAA\t72.0%\tCRITICAL_HOLD\tS. Ghosal\n2. EXECUTE WAFER LOT ACTION (POST / WRITE)\nWafer Lot / Invoice ID:\nAction Type:\nEXPEDITE_SHIP\nREADY_SHIP\nAPPROVE_RELEASE\nQUARANTINE_HOLD\nCRITICAL_HOLD\nIN_LITHOGRAPHY\nAuthorized Engineer:\nSimulate UI Chaos:  (ERR-902 Modal)\nExecute Transaction\nStatus: IDLE - Waiting for operator input...\nBelow-the-Fold Cleanroom Sub-Telemetry & Audit Log\nCleanroom ISO-3 Particle Index: 0.04 ppm (NOMINAL) | EUV Scanner Uptime: 99.2% | Active Shift Lead: S. Ghosal",
+  "tools": [
+    {
+      "name": "fabtrack_query_wafer_lot_telemetry",
+      "method": "GET",
+      "description": "Returns matching wafer lot telemetry records with Lot_ID, Node, Yield, Status, and Owner filtered by the selected status.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "status_filter": {
+            "type": "string",
+            "description": "Filter wafer lots by status.",
+            "enum": [
+              "ALL",
+              "CRITICAL_HOLD",
+              "IN_LITHOGRAPHY",
+              "READY_SHIP",
+              "EXPEDITE_SHIP",
+              "QUARANTINE_HOLD",
+              "APPROVE_RELEASE"
+            ]
+          }
+        },
+        "required": [
+          "status_filter"
+        ]
+      },
+      "execution_steps": [
+        {
+          "action": "select",
+          "mark_id": 1,
+          "css_fallback": "#flt_status",
+          "target_text": "Filter by Status:",
+          "value_template": "{{status_filter}}"
+        },
+        {
+          "action": "click",
+          "mark_id": 2,
+          "css_fallback": "#btn_query_lots",
+          "target_text": "Query DB",
+          "value_template": "{{status_filter}}"
+        }
+      ],
+      "visual_output_keys": [
+        "lot table with Lot_ID, Node, Yield, Status, and Owner"
+      ]
+    },
+    {
+      "name": "fabtrack_execute_wafer_lot_action",
+      "method": "POST",
+      "description": "Creates the wafer lot action record if the lot ID is new, otherwise updates it. Can set Action Type and Authorized Engineer. Fields not on the form cannot be set.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "lot_id": {
+            "type": "string",
+            "description": "Wafer Lot / Invoice ID, e.g. LOT-9920-NV"
+          },
+          "action_type": {
+            "type": "string",
+            "description": "Action type to execute on the lot.",
+            "enum": [
+              "EXPEDITE_SHIP",
+              "READY_SHIP",
+              "APPROVE_RELEASE",
+              "QUARANTINE_HOLD",
+              "CRITICAL_HOLD",
+              "IN_LITHOGRAPHY"
+            ]
+          },
+          "authorized_engineer": {
+            "type": "string",
+            "description": "Optional authorized engineer name for the status update."
+          }
+        },
+        "required": [
+          "lot_id",
+          "action_type"
+        ]
+      },
+      "execution_steps": [
+        {
+          "action": "fill",
+          "mark_id": 3,
+          "css_fallback": "#inp_x91",
+          "target_text": "Wafer Lot / Invoice ID:",
+          "value_template": "{{lot_id}}"
+        },
+        {
+          "action": "select",
+          "mark_id": 4,
+          "css_fallback": "#sel_k02",
+          "target_text": "Action Type:",
+          "value_template": "{{action_type}}"
+        },
+        {
+          "action": "fill",
+          "mark_id": 5,
+          "css_fallback": "#inp_eng",
+          "target_text": "Authorized Engineer:",
+          "value_template": "{{authorized_engineer}}"
+        },
+        {
+          "action": "click",
+          "mark_id": 6,
+          "css_fallback": "#btn_exec_77",
+          "target_text": "Execute Transaction",
+          "value_template": "{{lot_id}}"
+        }
+      ],
+      "visual_output_keys": [
+        "status message confirming transaction result"
+      ]
+    },
+    {
+      "name": "fabtrack_open_section",
+      "method": "GET",
+      "description": "Opens the selected portal module section.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "section": {
+            "type": "string",
+            "description": "Portal module section to open.",
+            "enum": [
+              "Wafer Lot Control"
+            ]
+          }
+        },
+        "required": [
+          "section"
+        ]
+      },
+      "execution_steps": [
+        {
+          "action": "click",
+          "mark_id": 7,
+          "css_fallback": "",
+          "target_text": "Wafer Lot Control",
+          "value_template": "{{section}}"
+        }
+      ],
+      "visual_output_keys": [
+        "the selected portal module page"
+      ]
+    },
+    {
+      "name": "fabtrack_read_page",
+      "method": "GET",
+      "description": "Read the current page and answer a question about it / extract its visible records.",
+      "input_schema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "execution_steps": [],
+      "visual_output_keys": [
+        "answer",
+        "items"
+      ]
+    }
+  ]
+}
